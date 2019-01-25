@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Simple transfer learning with Inception v3 or Mobilenet models.
+r"""Simple transfer learning with Inception v3 or Mobilenet models.
 
 With support for TensorBoard.
 
@@ -1183,8 +1183,8 @@ def main(_):
       f.write('\n'.join(image_lists.keys()) + '\n')
 
 
-# MODEL_TYPE = 'inception_v3'
-MODEL_TYPE = 'mobilenet_0.50_224'
+MODEL_TYPE = 'inception_v3'
+# MODEL_TYPE = 'mobilenet_0.50_224'
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument(
