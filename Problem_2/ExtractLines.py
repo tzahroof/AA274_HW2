@@ -17,27 +17,24 @@ from PlotFunctions import *
 # functions
 ############################################################
 
-#-----------------------------------------------------------
-# ExtractLines
-#
-# This function implements a split-and-merge line
-# extraction algorithm
-#
-# INPUT: RangeData - (x_r, y_r, theta, rho)
-#                x_r - robot's x position (m)
-#                y_r - robot's y position (m)
-#              theta - (1D) np array of angle 'theta' from data (rads)
-#                rho - (1D) np array of distance 'rho' from data (m)
-#           params - dictionary of parameters for line extraction
-#
-# OUTPUT: (alpha, r, segend, pointIdx)
-#         alpha - (1D) np array of 'alpha' for each fitted line (rads)
-#             r - (1D) np array of 'r' for each fitted line (m)
-#        segend - np array (N_lines, 4) of line segment endpoints.
-#                 each row represents [x1, y1, x2, y2]
-#      pointIdx - (N_lines,2) segment's first and last point index
-
 def ExtractLines(RangeData, params):
+    '''
+    This function implements a split-and-merge line extraction algorithm
+
+    INPUT: RangeData - (x_r, y_r, theta, rho)
+                x_r - robot's x position (m)
+                y_r - robot's y position (m)
+              theta - (1D) np array of angle 'theta' from data (rads)
+                rho - (1D) np array of distance 'rho' from data (m)
+           params - dictionary of parameters for line extraction
+
+    OUTPUT: (alpha, r, segend, pointIdx)
+         alpha - (1D) np array of 'alpha' for each fitted line (rads)
+             r - (1D) np array of 'r' for each fitted line (m)
+        segend - np array (N_lines, 4) of line segment endpoints.
+                 each row represents [x1, y1, x2, y2]
+      pointIdx - (N_lines,2) segment's first and last point index
+    '''
 
     # Extract useful variables from RangeData
     x_r = RangeData[0]
@@ -99,53 +96,48 @@ def ExtractLines(RangeData, params):
     return alpha, r, segend, pointIdx
 
 
-#-----------------------------------------------------------
-# SplitLineRecursive
-#
-# This function executes a recursive line-slitting algorithm,
-# which recursively sub-divides line segments until no further
-# splitting is required.
-#
-# INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
-#           rho - (1D) np array of distance 'rho' from data (m)
-#      startIdx - starting index of segment to be split
-#        endIdx - ending index of segment to be split
-#        params - dictionary of parameters
-#
-# OUTPUT: alpha - (1D) np array of 'alpha' for each fitted line (rads)
-#             r - (1D) np array of 'r' for each fitted line (m)
-#           idx - (N_lines,2) segment's first and last point index
-
 def SplitLinesRecursive(theta, rho, startIdx, endIdx, params):
+    '''
+    This function executes a recursive line-slitting algorithm, 
+    which recursively sub-divides line segments until no further 
+    splitting is required.
+
+    INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
+           rho - (1D) np array of distance 'rho' from data (m)
+      startIdx - starting index of segment to be split
+        endIdx - ending index of segment to be split
+        params - dictionary of parameters
+
+    OUTPUT: alpha - (1D) np array of 'alpha' for each fitted line (rads)
+             r - (1D) np array of 'r' for each fitted line (m)
+           idx - (N_lines,2) segment's first and last point index
+    '''
 
     ##### TO DO #####
     # Implement a recursive line splitting function
     # It should call 'FitLine()' to fit individual line segments
     # In should call 'FindSplit()' to find an index to split at
     #################
-    alpha = np.zeros(0)    # PLACEHOLDER (DELETE)
-    r = np.zeros(0)        # PLACEHOLDER (DELETE)
-    idx = np.zeros((0, 2))  # PLACEHOLDER (DELETE)
+
+    raise NotImplementedError
+
     return alpha, r, idx
 
 
-#-----------------------------------------------------------
-# FindSplit
-#
-# This function takes in a line segment and outputs the best
-# index at which to split the segment
-#
-# INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
-#           rho - (1D) np array of distance 'rho' from data (m)
-#         alpha - 'alpha' of input line segment (1 number)
-#             r - 'r' of input line segment (1 number)
-#        params - dictionary of parameters
-#
-# OUTPUT: SplitIdx - idx at which to split line (return -1 if
-#                    it cannot be split)
-
 def FindSplit(theta, rho, alpha, r, params):
+    '''
+        This function takes in a line segment and outputs the best index 
+        at which to split the segment
 
+        INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
+               rho - (1D) np array of distance 'rho' from data (m)
+             alpha - 'alpha' of input line segment (1 number)
+                 r - 'r' of input line segment (1 number)
+            params - dictionary of parameters
+
+        OUTPUT: SplitIdx - idx at which to split line (return -1 if
+                        it cannot be split)
+    '''
     ##### TO DO #####
     # Implement a function to find the split index (if one exists)
     # It should compute the distance of each point to the line.
@@ -154,60 +146,60 @@ def FindSplit(theta, rho, alpha, r, params):
     # not divide into segments smaller than 'MIN_POINTS_PER_SEGMENT'
     # return -1 if no split is possiple
     #################
-    splitIdx = -1    # PLACEHOLDER (DELETE)
+
+    raise NotImplementedError
+
     return splitIdx
 
 
-#-----------------------------------------------------------
-# FitLine
-#
-# This function outputs a best fit line to a segment of range
-# data, expressed in polar form (alpha, r)
-#
-# INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
-#           rho - (1D) np array of distance 'rho' from data (m)
-#
-# OUTPUT: alpha - 'alpha' of best fit for range data (1 number) (rads)
-#             r - 'r' of best fit for range data (1 number) (m)
-
 def FitLine(theta, rho):
+    '''
+    FitLine
+
+    This function outputs a best fit line to a segment of range
+    data, expressed in polar form (alpha, r)
+
+    INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
+           rho - (1D) np array of distance 'rho' from data (m)
+
+    OUTPUT: alpha - 'alpha' of best fit for range data (1 number) (rads)
+             r - 'r' of best fit for range data (1 number) (m)
+    '''
 
     ##### TO DO #####
     # Implement a function to fit a line to polar data points
     # based on the solution to the least squares problem (see Hw)
     #################
-    alpha, r = 0.0, 0.0    # PLACEHOLDER (DELETE)
+
+    raise NotImplementedError
+
     return alpha, r
 
 
-#---------------------------------------------------------------------
-# MergeColinearNeigbors
-#
-# This function merges neighboring segments that are colinear and outputs
-# a new set of line segments
-#
-# INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
-#           rho - (1D) np array of distance 'rho' from data (m)
-#         alpha - (1D) np array of 'alpha' for each fitted line (rads)
-#             r - (1D) np array of 'r' for each fitted line (m)
-#      pointIdx - (N_lines,2) segment's first and last point indices
-#        params - dictionary of parameters
-#
-# OUTPUT: alphaOut - output 'alpha' of merged lines (rads)
-#             rOut - output 'r' of merged lines (m)
-#      pointIdxOut - output start and end indices of merged line segments
-
 def MergeColinearNeigbors(theta, rho, alpha, r, pointIdx, params):
-
+    '''
+    MergeColinearNeigbors
+    This function merges neighboring segments that are colinear and outputs
+    a new set of line segments
+    INPUT:  theta - (1D) np array of angle 'theta' from data (rads)
+              rho - (1D) np array of distance 'rho' from data (m)
+            alpha - (1D) np array of 'alpha' for each fitted line (rads)
+                r - (1D) np array of 'r' for each fitted line (m)
+         pointIdx - (N_lines,2) segment's first and last point indices
+           params - dictionary of parameters
+    OUTPUT: alphaOut - output 'alpha' of merged lines (rads)
+                rOut - output 'r' of merged lines (m)
+         pointIdxOut - output start and end indices of merged line segments
+    '''
     ##### TO DO #####
     # Implement a function to merge colinear neighboring line segments
     # HINT: loop through line segments and try to fit a line to data
     #       points from two adjacent segments. If this line cannot be
     #       split, then accept the merge. If it can be split, do not merge.
     #################
-    alphaOut = np.zeros(0)         # PLACEHOLDER (DELETE)
-    rOut = np.zeros(0)             # PLACEHOLDER (DELETE)
-    pointIdxOut = np.zeros((0, 2))  # PLACEHOLDER (DELETE)
+
+    raise NotImplementedError
+
     return alphaOut, rOut, pointIdxOut
 
 
