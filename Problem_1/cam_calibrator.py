@@ -17,7 +17,6 @@ import pdb
 
 from camera_calibration.calibrator import MonoCalibrator, ChessboardInfo, Patterns
 
-
 class CameraCalibrator:
 
     def __init__(self):
@@ -63,6 +62,154 @@ class CameraCalibrator:
         self.n_chessboards = len(self.c.good_corners)             # Number of examined images
         self.n_corners_y, self.n_corners_x = n_corners            # Dimensions of extracted corner grid
         self.n_corners_per_chessboard = n_corners[0]*n_corners[1]
+
+
+    def genCornerCoordinates(self, u_meas, v_meas):
+        '''
+        Inputs:
+            u_meas: a list of arrays where each array are the u values for each board.
+            v_meas: a list of arrays where each array are the v values for each board.
+        Output:
+            corner_coordinates: a tuple (Xg, Yg) where Xg/Yg is a list of arrays where each array are the x/y values for each board.
+
+        HINT: u_meas, v_meas starts at the blue end, and finishes with the pink end
+        HINT: our solution does not use the u_meas and v_meas values 
+        HINT: it does not matter where your frame it, as long as you are consistent! 
+        '''
+
+        ########## Code starts here ##########
+
+        corner_coordinates = None  # UPDATE ME
+
+        ########## Code ends here ##########
+
+        return corner_coordinates
+    def estimateHomography(self, u_meas, v_meas, X, Y):    # Zhang Appendix A
+        '''
+        Inputs:
+            u_meas: an array of the u values for a board.
+            v_meas: an array of the v values for a board.
+            X: an array of the X values for a board. (from genCornerCoordinates)
+            Y: an array of the Y values for a board. (from genCornerCoordinates)
+        Output:
+            H: the homography matrix. its size is 3x3
+        
+        HINT: What is the size of the matrix L?
+        HINT: What are the outputs of the np.linalg.svd function? Based on this, where does the eigenvector corresponding to the smallest eigen value live?
+        HINT: np.stack and/or np.hstack may come in handy here.
+        '''
+        ########## Code starts here ##########
+
+        H = None # UPDATE ME
+
+        ########## Code ends here ##########
+        return H
+
+    def getCameraIntrinsics(self, H):    # Zhang 3.1, Appendix B
+        '''
+        Input:
+            H: a list of homography matrices for each board
+        Output:
+            A: the camera intrinsic matrix
+
+        HINT: MAKE SURE YOU READ SECTION 3.1 THOROUGHLY!!! V. IMPORTANT
+        HINT: What is the definition of h_ij?  
+        HINT: It might be cleaner to write an inner function (a function inside the getCameraIntrinsics function)
+        HINT: What is the size of V?
+        '''
+        ########## Code starts here ##########
+
+
+        A = None # UPDATE ME
+
+        ########## Code ends here ##########
+        return A
+
+    def getExtrinsics(self, H, A):    # Zhang 3.1, Appendix C
+        '''
+        Inputs:
+            H: a single homography matrix
+            A: the camera intrinsic matrix
+        Outputs:
+            R: the rotation matrix
+            t: the translation vector
+        '''
+        ########## Code starts here ##########
+        # UPDATE ME
+        R = None
+        t = None
+
+
+        ########## Code ends here ##########
+        return R, t
+
+    def transformWorld2NormImageUndist(self, X, Y, Z, R, t):    # Zhang 2.1, Eq. (1)
+        '''
+        Inputs:
+            X, Y, Z: the world coordinates of the points for a given board. This is an array of 63 elements
+                     X, Y come from genCornerCoordinates. Since the board is planar, we assume Z is an array of zeros.
+            R, t: the camera extrinsic parameters (rotation matrix and translation vector) for a given board.
+        Outputs:
+            x, y: the coordinates in the ideal normalized image plane
+
+        '''
+        ########## Code starts here ##########
+        # UPDATE ME
+        x = None
+        y = None
+
+        ########## Code ends here ##########
+        return x, y
+
+    def transformWorld2PixImageUndist(self, X, Y, Z, R, t, A):    # Zhang 2.1, Eq. (1)
+        '''
+        Inputs:
+            X, Y, Z: the world coordinates of the points for a given board. This is an array of 63 elements
+                     X, Y come from genCornerCoordinates. Since the board is planar, we assume Z is an array of zeros.
+            A: the camera intrinsic parameters
+            R, t: the camera extrinsic parameters (rotation matrix and translation vector) for a given board.
+        Outputs:
+            u, v: the coordinates in the ideal pixel image plane
+        '''
+        ########## Code starts here ##########
+        # UPDATE ME
+        u = None
+        v = None
+        ########## Code ends here ##########
+        return u, v
+
+    def transformWorld2NormImageDist(self, X, Y, R, t, k):    # Zhang 3.3
+        '''
+        Inputs:
+            X, Y, Z: the world coordinates of the points for a given board. This is an array of 63 elements
+                     X, Y come from genCornerCoordinates. Since the board is planar, we assume Z is an array of zeros.
+            R, t: the camera extrinsic parameters (rotation matrix and translation vector) for a given board.
+        Outputs:
+            x_br, y_br: the real, normalized image coordinates         
+        '''
+        ########## Code starts here ##########        
+                # UPDATE ME
+        x_br = None
+        y_br = None
+        ########## Code ends here ##########        
+        return x_br, y_br
+
+    def transformWorld2PixImageDist(self, X, Y, Z, R, t, A, k):    # Zhang 3.3
+        '''
+        Inputs:
+            X, Y, Z: the world coordinates of the points for a given board. This is an array of 63 elements
+                     X, Y come from genCornerCoordinates. Since the board is planar, we assume Z is an array of zeros.
+            A: the camera intrinsic parameters                     
+            R, t: the camera extrinsic parameters (rotation matrix and translation vector) for a given board.
+        Outputs:
+            u_br, v_br: the real, observed image coordinates         
+        '''
+        ########## Code starts here ##########                
+        # UPDATE ME
+        u_br = None
+        v_br = None
+        ########## Code ends here ##########
+        return u_br, v_br
 
     def undistortImages(self, A, k=np.zeros(2), n_disp_img=1e5, scale=0):
         Anew_no_k, roi = cv2.getOptimalNewCameraMatrix(A, np.zeros(4), (self.w_pixels, self.h_pixels), scale)
@@ -237,46 +384,3 @@ class CameraCalibrator:
 
         return u_meas, v_meas   # Lists of arrays (one per chessboard)
 
-    def genCornerCoordinates(self, u_meas, v_meas):
-        # TODO - part (i)
-        raise NotImplementedError
-        return X, Y
-
-    def estimateHomography(self, u_meas, v_meas, X, Y):
-        # TODO - part (ii)
-        raise NotImplementedError
-        return H
-
-    def getCameraIntrinsics(self, H):
-        # TODO - part (iii)
-        raise NotImplementedError
-        return A
-
-    def getExtrinsics(self, H, A):
-        # TODO - part (iv)
-        raise NotImplementedError
-        return R, t
-
-    def transformWorld2NormImageUndist(self, X, Y, Z, R, t):
-        """
-        Note: The transformation functions should only process one chessboard at a time!
-        This means X, Y, Z, R, t should be individual arrays
-        """
-        # TODO - part (v)
-        raise NotImplementedError
-        return x, y
-
-    def transformWorld2PixImageUndist(self, X, Y, Z, R, t, A):
-        # TODO - part (v)
-        raise NotImplementedError
-        return u, v
-
-    def transformWorld2NormImageDist(self, X, Y, R, t, k):  # TODO: test
-        # TODO - part (vi)
-        raise NotImplementedError
-        return x_br, y_br
-
-    def transformWorld2PixImageDist(self, X, Y, Z, R, t, A, k):
-        # TODO - part (vi)
-        raise NotImplementedError
-        return u_br, v_br

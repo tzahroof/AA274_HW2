@@ -8,10 +8,25 @@ with open('labels.txt', 'r') as f:
     LABELS = f.read().split()
 
 def compute_brute_force_classification(image_path, nH=8, nW=8):
-    raw_image = decode_jpeg(image_path)    # H x W x 3 numpy array (3 for each RGB color channel)
+    '''
+    This function returns the probabilities of each window.
+    Inputs:
+        image_path: path to the image to be analysed
+        nH: number of windows in the vertical direction
+        nW: number of windows in the horizontal direction
+    Outputs:
+        window_predictions: a (nH, nW, 3) np.array. 
+                            The last dim (size 3) is the probabilities 
+                            of each label (cat, dog, neg)
+    HINT: classify_image  (from utils.py) will be useful here.
+    HINT: You will need to define a tensorflow session. You can do this by running:
+          with tf.Session() as sess: 
+    '''
 
-    #### EDIT THIS CODE
-
+    # H x W x 3 numpy array (3 for each RGB color channel)
+    raw_image = decode_jpeg(image_path)
+    ######### Your code starts here #########
+    
     with tf.Session() as sess:
         window = raw_image    # the "window" here is the whole image
         window_prediction = classify_image(window, sess)
@@ -20,9 +35,10 @@ def compute_brute_force_classification(image_path, nH=8, nW=8):
     # do not turn this code in and claim that "your window padding is infinite"
     window_predictions = np.array([[window_prediction for c in range(nW)] for r in range(nH)])
 
-    ####
 
-    return np.squeeze(np.array(predictions))
+    ######### Your code ends here #########
+
+    return window_predictions
 
 def compute_convolutional_KxK_classification(image):
     graph = tf.get_default_graph()
@@ -38,6 +54,16 @@ def compute_convolutional_KxK_classification(image):
         return np.reshape(predictionsKxK, [K,K,-1])
 
 def compute_and_plot_saliency(image):
+    '''
+    This function computes and plots the saliency plot.
+    Input: image to be analysed
+    Output: None
+
+    You need to compute the matrix M detailed in section 3.1 in
+    K. Simonyan, A. Vedaldi, and A. Zisserman, 
+    "Deep inside convolutional networks: Visualising imageclassification models and saliency maps," 
+    2013, Available at https://arxiv.org/abs/1312.6034.
+    '''
     graph = tf.get_default_graph()
     logits_tensor = graph.get_tensor_by_name('final_training_ops/Wx_plus_b/logits:0')
 
@@ -45,12 +71,11 @@ def compute_and_plot_saliency(image):
         logits = np.squeeze(run_with_image_input(logits_tensor, image, sess))
         top_class = np.argmax(logits)
         w_ijc = gradient_of_class_score_with_respect_to_input_image(image, top_class, sess)    # defined in utils.py
-    
-    #### EDIT THIS CODE
+    ######### Your code starts here #########
     
     M = np.zeros(raw_gradients.shape[0:2])  # something of the right shape to plot
 
-    ####
+    ######### Your code ends here #########
 
     plt.subplot(2,1,1)
     plt.imshow(M)
