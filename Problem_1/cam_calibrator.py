@@ -81,6 +81,7 @@ class CameraCalibrator:
         length = self.d_square
         nrows  = self.n_corners_y
         ncols  = self.n_corners_x
+        nboards = self.n_chessboards
 
         Xg = np.zeros(0)
         Yg = np.zeros(0)
@@ -93,11 +94,19 @@ class CameraCalibrator:
                 Xg = np.append(Xg, xtemp)
                 Yg = np.append(Yg, ytemp)
 
-        corner_coordinates = (Xg, Yg)
+        X_board = []
+        Y_board = []
+        for i in range(nboards):
+            X_board.append(Xg)
+            Y_board.append(Yg)
+
+        corner_coordinates = (X_board, Y_board)
 
         ########## Code ends here ##########
 
         return corner_coordinates
+
+
     def estimateHomography(self, u_meas, v_meas, X, Y):    # Zhang Appendix A
         '''
         Inputs:
@@ -172,10 +181,10 @@ class CameraCalibrator:
         H = np.transpose(H)
 
         Vij = np.array( [ H[i,0] * H[j,0], \
-            H[i,0] * H[j,1] + H[i,1] * H[j,0] \
-            H[i,1] * H[j,1] \
-            H[i,2] * H[j,0] + H[i,0] * H[j,2] \
-            H[i,2] * H[j,1] + H[i,1] * H[j,2] \
+            H[i,0] * H[j,1] + H[i,1] * H[j,0], \
+            H[i,1] * H[j,1], \
+            H[i,2] * H[j,0] + H[i,0] * H[j,2], \
+            H[i,2] * H[j,1] + H[i,1] * H[j,2], \
             H[i,2] * H[j,2]  ])
 
         return Vij
@@ -189,8 +198,9 @@ class CameraCalibrator:
         B11 = b[0]
         B12 = b[1]
         B22 = b[2]
-        B23 = b[3]
-        B33 = b[4]
+        B13 = b[3]
+        B23 = b[4]
+        B33 = b[5]
 
         #determine the coefficients
         v0 = (B12 * B13 - B11 * B23) / (B11 * B22 - (B12**2))
@@ -226,7 +236,7 @@ class CameraCalibrator:
         ########## Code starts here ##########
 
         # Initialize V
-        V = np.zeros( (0,0) )
+        V = np.empty( (0,6) )
 
         # Iterate through all H matrices provided
         for H_i in H:
@@ -242,7 +252,7 @@ class CameraCalibrator:
         # solution is right-most vector
         b = unitary[-1]
 
-        A = self.getIntrinsicsFromB(self, b) # UPDATE ME
+        A = self.getIntrinsicsFromB(b) # UPDATE ME
 
         ########## Code ends here ##########
         return A
@@ -258,9 +268,27 @@ class CameraCalibrator:
         '''
         ########## Code starts here ##########
         # UPDATE ME
-        R = None
-        t = None
 
+        #gather parameters
+        A_inv = np.linalg.inv(A)
+        h1 = H[:,0]
+        h2 = H[:,1]
+        h3 = H[:,2]
+
+        #calculate R and t values
+        lam = 1/np.linalg.norm(A_inv * h1)
+        r1 = lam * np.matmul(A_inv, h1)
+        r2 = lam * np.matmul(A_inv, h2)
+        r3 = np.cross(r1, r2)
+
+        R = np.column_stack( (r1, r2, r3) )
+        #print(R.shape)
+        t = lam * np.matmul(A_inv, h3)
+
+        #refine R
+        U, s, V = np.linalg.svd(R, full_matrices=False)
+        R = np.matmul(U,V) 
+        
 
         ########## Code ends here ##########
         return R, t
@@ -276,9 +304,20 @@ class CameraCalibrator:
 
         '''
         ########## Code starts here ##########
-        # UPDATE ME
-        x = None
-        y = None
+
+        #(R,t) relates the world coordinate system to the camera coordinate system
+        R_mat = np.column_stack( (R, t) )
+        M_tilde = np.row_stack( (X, Y, Z, np.ones(len(X))) ) # TODO: check
+
+        cam_coords = np.matmul(R_mat,M_tilde)
+
+        X_cam = cam_coords[0]
+        Y_cam = cam_coords[1]
+        Z_cam = cam_coords[2]
+
+
+        x = X_cam / Z_cam
+        y = Y_cam / Z_cam
 
         ########## Code ends here ##########
         return x, y
@@ -294,9 +333,17 @@ class CameraCalibrator:
             u, v: the coordinates in the ideal pixel image plane
         '''
         ########## Code starts here ##########
-        # UPDATE ME
-        u = None
-        v = None
+
+        # M_tilde is world coordinates
+        M_tilde = np.row_stack( (X, Y, Z, np.ones( len(X) ) ) )
+        R_mat = np.column_stack( (R, t) )
+
+        cam_coords = np.matmul(R_mat, M_tilde)
+        pix_coords = np.matmul(A, cam_coords)
+        #pix_coords = np.dot( A, np.dot(R_mat, M_tilde) )#A * R_mat * M_tilde
+        
+        u = pix_coords[0] / pix_coords[2] #normalized
+        v = pix_coords[1] / pix_coords[2] 
         ########## Code ends here ##########
         return u, v
 
@@ -311,8 +358,12 @@ class CameraCalibrator:
         '''
         ########## Code starts here ##########        
                 # UPDATE ME
-        x_br = None
-        y_br = None
+        X_ideal, Y_ideal = self.transformWorld2NormImageUndist(X,Y,Z,R,t)
+        k1 = k[0]
+        k2 = k[1]
+
+        x_br = X_ideal + X_ideal * (k1 * (X_ideal**2 + Y_ideal**2) + k2*(X_ideal**2 + Y_ideal**2)**2)
+        y_br = Y_ideal + Y_ideal * (k1 * (X_ideal**2 + Y_ideal**2) + k2*(X_ideal**2 + Y_ideal**2)**2)
         ########## Code ends here ##########        
         return x_br, y_br
 
@@ -328,12 +379,19 @@ class CameraCalibrator:
         '''
         ########## Code starts here ##########                
         # UPDATE ME
-        u_br = None
-        v_br = None
+        X_ideal, Y_ideal = self.transformWorld2NormImageUndist(X,Y,Z,R,t)
+        u, v = self.transformWorld2PixImageUndist(X,Y,Z,R,t,A)
+        k1 = k[0]
+        k2 = k[1]
+        u0 = A[0,2]
+        v0 = A[1,2]
+
+        u_br = u + (u-u0) * (k1 * (X_ideal**2 + Y_ideal**2) + k2 * (X_ideal**2 + Y_ideal**2)**2)
+        v_br = v + (v-v0) * (k1 * (X_ideal**2 + Y_ideal**2) + k2 * (X_ideal**2 + Y_ideal**2)**2)
         ########## Code ends here ##########
         return u_br, v_br
 
-    def undistortImages(self, A, k=np.zeros(2), n_disp_img=1e5, scale=0):
+    def undistortImages(self, A, k = np.zeros(2), n_disp_img=1e5, scale=0): 
         Anew_no_k, roi = cv2.getOptimalNewCameraMatrix(A, np.zeros(4), (self.w_pixels, self.h_pixels), scale)
         mapx_no_k, mapy_no_k = cv2.initUndistortRectifyMap(A, np.zeros(4), None, Anew_no_k, (self.w_pixels, self.h_pixels), cv2.CV_16SC2)
         Anew_w_k, roi = cv2.getOptimalNewCameraMatrix(A, np.hstack([k, 0, 0]), (self.w_pixels, self.h_pixels), scale)
@@ -373,8 +431,7 @@ class CameraCalibrator:
                 plt.show(block=False)
                 plt.waitforbuttonpress()
 
-    def plotBoardPixImages(self, u_meas, v_meas, X, Y, R, t, A, n_disp_img=1e5, k=np.zeros(2)):
-        # Expects X, Y, R, t to be lists of arrays, just like u_meas, v_meas
+    def plotBoardPixImages(self, u_meas, v_meas, X, Y, R, t, A, n_disp_img=1e5, k=np.zeros(2)):         # Expects X, Y, R, t to be lists of arrays, just like u_meas, v_meas
 
         fig = plt.figure('Chessboard Projection to Pixel Image Frame', figsize=(8, 6))
         plt.clf()
