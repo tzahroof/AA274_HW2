@@ -78,8 +78,22 @@ class CameraCalibrator:
         '''
 
         ########## Code starts here ##########
+        length = self.d_square
+        nrows  = self.n_corners_y
+        ncols  = self.n_corners_x
 
-        corner_coordinates = None  # UPDATE ME
+        Xg = np.zeros(0)
+        Yg = np.zeros(0)
+
+        for j in range(nrows):
+            for i in range(ncols):
+                xtemp = length*i
+                ytemp = length*j
+
+                Xg = np.append(Xg, xtemp)
+                Yg = np.append(Yg, ytemp)
+
+        corner_coordinates = (Xg, Yg)
 
         ########## Code ends here ##########
 
@@ -100,10 +114,102 @@ class CameraCalibrator:
         '''
         ########## Code starts here ##########
 
-        H = None # UPDATE ME
+        n = len(X)
+
+        # create M matrix
+        M = np.vstack( (X,Y,np.ones(n)) )
+        M_T = np.transpose(M)
+
+        # initialize L matrix
+        L = np.zeros((2*n,9))
+
+        # make parameters that are used in L matrix
+        zero_T = np.zeros((n,3))
+
+        u_meas_mat = np.column_stack( (u_meas,u_meas,u_meas) )
+        v_meas_mat = np.column_stack( (v_meas,v_meas,v_meas) )
+
+        u_M_T = -1 * np.multiply(u_meas_mat,M_T) #-1 * u_meas * M_T
+        v_M_T = -1 * np.multiply(v_meas_mat,M_T) #-1 * v_meas * M_T
+
+        # create L matrix
+        L_row_1 = np.column_stack( (M_T, zero_T, u_M_T) )
+        L_row_2 = np.column_stack( (zero_T, M_T, v_M_T) )
+
+        L = np.vstack( (L_row_1, L_row_2) )
+
+        # Use SVD to find the smallest norm of Lx
+        U, s, V = np.linalg.svd(L, full_matrices = False)
+
+        # obtain solution vector, which is rightmost singular vector
+        V_sol = V[-1]
+
+        # Create H
+        H = np.zeros( (3,3) )
+        H[0] = V_sol[0:3] #first row of H is the first 3 values of V_sol (first 3 values of V_sol are the transpose of H's first row)
+        H[1] = V_sol[3:6]
+        H[2] = V_sol[6:9]
+        
 
         ########## Code ends here ##########
         return H
+
+    
+    def getVij(self, H, i, j):
+        
+
+        '''
+        # Helper function
+        # i,j are written like in the equation (i.e. not zero-indexed)
+        '''
+       
+
+        # subtract for zero-indexing
+        i = i-1;
+        j = j-1;
+
+        # take transpose of H, since hi1 in paper means element 1 of column i, or H[1,i] in 1-index
+        H = np.transpose(H)
+
+        Vij = np.array( [ H[i,0] * H[j,0], \
+            H[i,0] * H[j,1] + H[i,1] * H[j,0] \
+            H[i,1] * H[j,1] \
+            H[i,2] * H[j,0] + H[i,0] * H[j,2] \
+            H[i,2] * H[j,1] + H[i,1] * H[j,2] \
+            H[i,2] * H[j,2]  ])
+
+        return Vij
+
+    def getIntrinsicsFromB(self, b):
+        '''
+
+        Helper function
+        Determines A from b
+        '''
+        B11 = b[0]
+        B12 = b[1]
+        B22 = b[2]
+        B23 = b[3]
+        B33 = b[4]
+
+        #determine the coefficients
+        v0 = (B12 * B13 - B11 * B23) / (B11 * B22 - (B12**2))
+        lam = B33 - ((B13**2) + v0*(B12 * B13 - B11 * B23) ) / B11
+        alpha = np.sqrt(lam/B11)
+        beta = np.sqrt(lam * B11 / (B11 * B22 - (B12**2)) )
+        gamma = -1 * B12 * (alpha**2) * beta / lam
+        u0 = gamma * v0 / beta - B13 * (alpha ** 2) / lam
+
+        #create A from coefficients
+        A = np.zeros((3, 3))
+        A[0,0] = alpha
+        A[0,1] = gamma
+        A[0,2] = u0
+        A[1,1] = beta
+        A[1,2] = v0
+        A[2,2] = 1
+
+        return A
 
     def getCameraIntrinsics(self, H):    # Zhang 3.1, Appendix B
         '''
@@ -119,8 +225,24 @@ class CameraCalibrator:
         '''
         ########## Code starts here ##########
 
+        # Initialize V
+        V = np.zeros( (0,0) )
 
-        A = None # UPDATE ME
+        # Iterate through all H matrices provided
+        for H_i in H:
+            V12 = self.getVij(H_i, 1, 2)
+            V11 = self.getVij(H_i, 1, 1)
+            V22 = self.getVij(H_i, 2, 2)
+
+            V = np.vstack( (V, V12, (V11 - V22)) )
+
+        # Use SVD to find solution
+        U, s, unitary = np.linalg.svd(V, full_matrices = False)
+
+        # solution is right-most vector
+        b = unitary[-1]
+
+        A = self.getIntrinsicsFromB(self, b) # UPDATE ME
 
         ########## Code ends here ##########
         return A

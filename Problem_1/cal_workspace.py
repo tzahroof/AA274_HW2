@@ -21,8 +21,8 @@ def main():
     #             so that you don't have to click through 23 images for each step
     # display_flag: True to display images and corners as they are loaded
     #               Feel free to change this to False while developing/debugging
-    n_disp_img = 23
-    display_flag = True
+    n_disp_img = 23 #TODO: Alter to 10 for debug, 23 for final
+    display_flag = True #TODO: Set to False for debug, True for final
 
     cc.loadImages(cal_img_path, name, n_corners, square_length, n_disp_img, display_flag)
 
